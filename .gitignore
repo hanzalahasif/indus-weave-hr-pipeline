@@ -1,0 +1,31 @@
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Large Database files (re-generated via python run_pipeline.py)
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+
+# Jupyter Notebooks & checkpoints
+notebooks/
+*.ipynb
+.ipynb_checkpoints/
+
+# IDE files
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,151 @@
+month_end,plant,department,headcount
+2026-04-30,Faisalabad Plant,Cutting,80
+2026-04-30,Faisalabad Plant,Maintenance,31
+2026-04-30,Faisalabad Plant,Packing,59
+2026-04-30,Faisalabad Plant,Quality Control,31
+2026-04-30,Faisalabad Plant,Stitching,148
+2026-04-30,Faisalabad Plant,Warehouse,22
+2026-04-30,Head Office,Administration,18
+2026-04-30,Head Office,Compliance,12
+2026-04-30,Head Office,Finance,19
+2026-04-30,Head Office,Human Resources,14
+2026-04-30,Head Office,IT,14
+2026-04-30,Head Office,Sales & Marketing,23
+2026-04-30,Head Office,Supply Chain,18
+2026-04-30,Korangi Plant,Maintenance,39
+2026-04-30,Korangi Plant,Production Planning,25
+2026-04-30,Korangi Plant,Quality Control,35
+2026-04-30,Korangi Plant,Spinning,119
+2026-04-30,Korangi Plant,Warehouse,30
+2026-04-30,Korangi Plant,Weaving,131
+2026-04-30,SITE Plant,Dyeing,112
+2026-04-30,SITE Plant,Finishing,100
+2026-04-30,SITE Plant,Maintenance,34
+2026-04-30,SITE Plant,Quality Control,29
+2026-04-30,SITE Plant,Utilities,30
+2026-04-30,SITE Plant,Warehouse,26
+2026-05-31,Faisalabad Plant,Cutting,80
+2026-05-31,Faisalabad Plant,Maintenance,31
+2026-05-31,Faisalabad Plant,Packing,58
+2026-05-31,Faisalabad Plant,Quality Control,31
+2026-05-31,Faisalabad Plant,Stitching,149
+2026-05-31,Faisalabad Plant,Warehouse,22
+2026-05-31,Head Office,Administration,18
+2026-05-31,Head Office,Compliance,12
+2026-05-31,Head Office,Finance,19
+2026-05-31,Head Office,Human Resources,14
+2026-05-31,Head Office,IT,14
+2026-05-31,Head Office,Sales & Marketing,24
+2026-05-31,Head Office,Supply Chain,18
+2026-05-31,Korangi Plant,Maintenance,42
+2026-05-31,Korangi Plant,Production Planning,25
+2026-05-31,Korangi Plant,Quality Control,37
+2026-05-31,Korangi Plant,Spinning,116
+2026-05-31,Korangi Plant,Warehouse,29
+2026-05-31,Korangi Plant,Weaving,130
+2026-05-31,SITE Plant,Dyeing,111
+2026-05-31,SITE Plant,Finishing,99
+2026-05-31,SITE Plant,Maintenance,33
+2026-05-31,SITE Plant,Quality Control,28
+2026-05-31,SITE Plant,Utilities,30
+2026-05-31,SITE Plant,Warehouse,26
+2026-06-30,Faisalabad Plant,Cutting,80
+2026-06-30,Faisalabad Plant,Maintenance,31
+2026-06-30,Faisalabad Plant,Packing,56
+2026-06-30,Faisalabad Plant,Quality Control,32
+2026-06-30,Faisalabad Plant,Stitching,146
+2026-06-30,Faisalabad Plant,Warehouse,22
+2026-06-30,Head Office,Administration,18
+2026-06-30,Head Office,Compliance,11
+2026-06-30,Head Office,Finance,19
+2026-06-30,Head Office,Human Resources,14
+2026-06-30,Head Office,IT,15
+2026-06-30,Head Office,Sales & Marketing,24
+2026-06-30,Head Office,Supply Chain,21
+2026-06-30,Korangi Plant,Maintenance,42
+2026-06-30,Korangi Plant,Production Planning,25
+2026-06-30,Korangi Plant,Quality Control,39
+2026-06-30,Korangi Plant,Spinning,114
+2026-06-30,Korangi Plant,Warehouse,28
+2026-06-30,Korangi Plant,Weaving,128
+2026-06-30,SITE Plant,Dyeing,112
+2026-06-30,SITE Plant,Finishing,99
+2026-06-30,SITE Plant,Maintenance,31
+2026-06-30,SITE Plant,Quality Control,28
+2026-06-30,SITE Plant,Utilities,30
+2026-06-30,SITE Plant,Warehouse,27
+2026-07-31,Faisalabad Plant,Cutting,79
+2026-07-31,Faisalabad Plant,Maintenance,30
+2026-07-31,Faisalabad Plant,Packing,54
+2026-07-31,Faisalabad Plant,Quality Control,32
+2026-07-31,Faisalabad Plant,Stitching,149
+2026-07-31,Faisalabad Plant,Warehouse,21
+2026-07-31,Head Office,Administration,18
+2026-07-31,Head Office,Compliance,12
+2026-07-31,Head Office,Finance,19
+2026-07-31,Head Office,Human Resources,13
+2026-07-31,Head Office,IT,13
+2026-07-31,Head Office,Sales & Marketing,24
+2026-07-31,Head Office,Supply Chain,20
+2026-07-31,Korangi Plant,Maintenance,42
+2026-07-31,Korangi Plant,Production Planning,24
+2026-07-31,Korangi Plant,Quality Control,37
+2026-07-31,Korangi Plant,Spinning,114
+2026-07-31,Korangi Plant,Warehouse,28
+2026-07-31,Korangi Plant,Weaving,126
+2026-07-31,SITE Plant,Dyeing,107
+2026-07-31,SITE Plant,Finishing,98
+2026-07-31,SITE Plant,Maintenance,29
+2026-07-31,SITE Plant,Quality Control,29
+2026-07-31,SITE Plant,Utilities,30
+2026-07-31,SITE Plant,Warehouse,28
+2026-08-31,Faisalabad Plant,Cutting,77
+2026-08-31,Faisalabad Plant,Maintenance,30
+2026-08-31,Faisalabad Plant,Packing,58
+2026-08-31,Faisalabad Plant,Quality Control,32
+2026-08-31,Faisalabad Plant,Stitching,148
+2026-08-31,Faisalabad Plant,Warehouse,21
+2026-08-31,Head Office,Administration,18
+2026-08-31,Head Office,Compliance,12
+2026-08-31,Head Office,Finance,19
+2026-08-31,Head Office,Human Resources,14
+2026-08-31,Head Office,IT,13
+2026-08-31,Head Office,Sales & Marketing,24
+2026-08-31,Head Office,Supply Chain,19
+2026-08-31,Korangi Plant,Maintenance,42
+2026-08-31,Korangi Plant,Production Planning,23
+2026-08-31,Korangi Plant,Quality Control,37
+2026-08-31,Korangi Plant,Spinning,115
+2026-08-31,Korangi Plant,Warehouse,28
+2026-08-31,Korangi Plant,Weaving,126
+2026-08-31,SITE Plant,Dyeing,107
+2026-08-31,SITE Plant,Finishing,98
+2026-08-31,SITE Plant,Maintenance,30
+2026-08-31,SITE Plant,Quality Control,30
+2026-08-31,SITE Plant,Utilities,32
+2026-08-31,SITE Plant,Warehouse,28
+2026-09-30,Faisalabad Plant,Cutting,77
+2026-09-30,Faisalabad Plant,Maintenance,30
+2026-09-30,Faisalabad Plant,Packing,57
+2026-09-30,Faisalabad Plant,Quality Control,32
+2026-09-30,Faisalabad Plant,Stitching,146
+2026-09-30,Faisalabad Plant,Warehouse,21
+2026-09-30,Head Office,Administration,19
+2026-09-30,Head Office,Compliance,12
+2026-09-30,Head Office,Finance,19
+2026-09-30,Head Office,Human Resources,14
+2026-09-30,Head Office,IT,13
+2026-09-30,Head Office,Sales & Marketing,24
+2026-09-30,Head Office,Supply Chain,19
+2026-09-30,Korangi Plant,Maintenance,40
+2026-09-30,Korangi Plant,Production Planning,23
+2026-09-30,Korangi Plant,Quality Control,37
+2026-09-30,Korangi Plant,Spinning,115
+2026-09-30,Korangi Plant,Warehouse,28
+2026-09-30,Korangi Plant,Weaving,126
+2026-09-30,SITE Plant,Dyeing,106
+2026-09-30,SITE Plant,Finishing,97
+2026-09-30,SITE Plant,Maintenance,30
+2026-09-30,SITE Plant,Quality Control,30
+2026-09-30,SITE Plant,Utilities,32
+2026-09-30,SITE Plant,Warehouse,28

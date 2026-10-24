@@ -1,0 +1,6 @@
+pay_month,department,plant,biometric_ot_hours,paid_ot_hours,paid_ot_amount,excess_hours,excess_pct
+2026-09,Stitching,Faisalabad Plant,876.5,1778.5,923936.0,902.0,102.9
+2026-08,Stitching,Faisalabad Plant,925.0,1548.5,778714.0,623.5,67.4
+2026-07,Stitching,Faisalabad Plant,901.5,1440.5,721695.0,539.0,59.8
+2026-06,Stitching,Faisalabad Plant,823.5,1122.0,527751.0,298.5,36.2
+2026-05,Stitching,Faisalabad Plant,858.5,1008.0,473693.0,149.5,17.4

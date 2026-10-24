@@ -1,0 +1,21 @@
+emp_id,full_name,department,plant,leave_days_taken,full_year_entitlement,days_over_entitlement
+E10770,Danish Iqbal,Spinning,Korangi Plant,28,14,14
+E10826,Ahmed Mirza,Finishing,SITE Plant,27,14,13
+E10748,Asif Ansari,Spinning,Korangi Plant,25,14,11
+E10025,Arif Gill,Spinning,Korangi Plant,24,14,10
+E11071,Ahmed Hussain,Finishing,SITE Plant,23,14,9
+E10827,Sajid Abbasi,Weaving,Korangi Plant,27,20,7
+E10250,Yasir Akhtar,Quality Control,SITE Plant,20,14,6
+E10764,Adnan Jatoi,Warehouse,Korangi Plant,20,14,6
+E10918,Shahid Shaikh,Maintenance,SITE Plant,20,14,6
+E10421,Haris Abbasi,Dyeing,SITE Plant,19,14,5
+E10993,Hina Malik,Dyeing,SITE Plant,18,14,4
+E11100,Asif Akhtar,Stitching,Faisalabad Plant,18,14,4
+E10121,Ahmed Siddiqui,Spinning,Korangi Plant,17,14,3
+E10922,Ahmed Bhatti,Maintenance,Faisalabad Plant,17,14,3
+E10505,Tariq Hashmi,Finishing,SITE Plant,16,14,2
+E10706,Arif Siddiqui,Maintenance,Faisalabad Plant,16,14,2
+E10560,Asif Siddiqui,Finishing,SITE Plant,15,14,1
+E10960,Owais Ansari,Maintenance,Faisalabad Plant,15,14,1
+E11117,Kashif Qureshi,Dyeing,SITE Plant,15,14,1
+E11265,Adnan Jatoi,Finishing,SITE Plant,15,14,1

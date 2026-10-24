@@ -1,0 +1,61 @@
+pay_month,emp_id,full_name,department,plant,present_days
+2026-04,E10907,Sohail Baig,Cutting,Faisalabad Plant,0
+2026-04,E10399,Fatima Chaudhry,Dyeing,SITE Plant,0
+2026-04,E10564,Danish Hashmi,Maintenance,Faisalabad Plant,0
+2026-04,E10491,Sajid Javed,Packing,Faisalabad Plant,0
+2026-04,E11064,Sajid Memon,Warehouse,Faisalabad Plant,0
+2026-04,E11089,Sajid Javed,Weaving,Korangi Plant,0
+2026-05,E10907,Sohail Baig,Cutting,Faisalabad Plant,0
+2026-05,E10399,Fatima Chaudhry,Dyeing,SITE Plant,0
+2026-05,E10471,Umair Baloch,Human Resources,Head Office,0
+2026-05,E10564,Danish Hashmi,Maintenance,Faisalabad Plant,0
+2026-05,E10491,Sajid Javed,Packing,Faisalabad Plant,0
+2026-05,E10397,Owais Mirza,Spinning,Korangi Plant,0
+2026-05,E11064,Sajid Memon,Warehouse,Faisalabad Plant,0
+2026-05,E11089,Sajid Javed,Weaving,Korangi Plant,0
+2026-06,E10907,Sohail Baig,Cutting,Faisalabad Plant,0
+2026-06,E10399,Fatima Chaudhry,Dyeing,SITE Plant,0
+2026-06,E11222,Naveed Ansari,Dyeing,SITE Plant,0
+2026-06,E10295,Sohail Hussain,Finishing,SITE Plant,0
+2026-06,E10471,Umair Baloch,Human Resources,Head Office,0
+2026-06,E10564,Danish Hashmi,Maintenance,Faisalabad Plant,0
+2026-06,E10491,Sajid Javed,Packing,Faisalabad Plant,0
+2026-06,E10989,Tariq Jatoi,Packing,Faisalabad Plant,0
+2026-06,E10327,Bilal Baloch,Stitching,Faisalabad Plant,0
+2026-06,E10332,Amna Awan,Warehouse,Faisalabad Plant,0
+2026-06,E11064,Sajid Memon,Warehouse,Faisalabad Plant,0
+2026-06,E11089,Sajid Javed,Weaving,Korangi Plant,0
+2026-07,E10907,Sohail Baig,Cutting,Faisalabad Plant,0
+2026-07,E10399,Fatima Chaudhry,Dyeing,SITE Plant,0
+2026-07,E11222,Naveed Ansari,Dyeing,SITE Plant,0
+2026-07,E10295,Sohail Hussain,Finishing,SITE Plant,0
+2026-07,E10471,Umair Baloch,Human Resources,Head Office,0
+2026-07,E10564,Danish Hashmi,Maintenance,Faisalabad Plant,0
+2026-07,E10491,Sajid Javed,Packing,Faisalabad Plant,0
+2026-07,E10989,Tariq Jatoi,Packing,Faisalabad Plant,0
+2026-07,E10294,Kashif Qureshi,Stitching,Faisalabad Plant,0
+2026-07,E10332,Amna Awan,Warehouse,Faisalabad Plant,0
+2026-07,E11064,Sajid Memon,Warehouse,Faisalabad Plant,0
+2026-07,E11089,Sajid Javed,Weaving,Korangi Plant,0
+2026-08,E10907,Sohail Baig,Cutting,Faisalabad Plant,0
+2026-08,E10399,Fatima Chaudhry,Dyeing,SITE Plant,0
+2026-08,E11222,Naveed Ansari,Dyeing,SITE Plant,0
+2026-08,E10295,Sohail Hussain,Finishing,SITE Plant,0
+2026-08,E10471,Umair Baloch,Human Resources,Head Office,0
+2026-08,E10564,Danish Hashmi,Maintenance,Faisalabad Plant,0
+2026-08,E10491,Sajid Javed,Packing,Faisalabad Plant,0
+2026-08,E10989,Tariq Jatoi,Packing,Faisalabad Plant,0
+2026-08,E10332,Amna Awan,Warehouse,Faisalabad Plant,0
+2026-08,E11064,Sajid Memon,Warehouse,Faisalabad Plant,0
+2026-08,E11089,Sajid Javed,Weaving,Korangi Plant,0
+2026-09,E10907,Sohail Baig,Cutting,Faisalabad Plant,0
+2026-09,E10399,Fatima Chaudhry,Dyeing,SITE Plant,0
+2026-09,E11222,Naveed Ansari,Dyeing,SITE Plant,0
+2026-09,E10295,Sohail Hussain,Finishing,SITE Plant,0
+2026-09,E10471,Umair Baloch,Human Resources,Head Office,0
+2026-09,E10564,Danish Hashmi,Maintenance,Faisalabad Plant,0
+2026-09,E10491,Sajid Javed,Packing,Faisalabad Plant,0
+2026-09,E10989,Tariq Jatoi,Packing,Faisalabad Plant,0
+2026-09,E10332,Amna Awan,Warehouse,Faisalabad Plant,0
+2026-09,E11064,Sajid Memon,Warehouse,Faisalabad Plant,0
+2026-09,E11089,Sajid Javed,Weaving,Korangi Plant,0
