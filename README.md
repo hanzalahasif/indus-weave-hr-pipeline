@@ -21,24 +21,37 @@ pip install -r requirements.txt
 
 ---
 
-## Quick start — rebuild from scratch
+## 🚀 How to Run the Pipeline (Commands Cheatsheet)
 
+### 1. Complete Rebuild & Export (Recommended)
+Drops old DB, runs all stages from scratch, and exports Q01–Q10 CSVs:
 ```bash
-# 1. Put all 12 data files inside data/raw/
-#    (employees.csv, employment_history.csv, … as listed below)
-
-# 2. Full rebuild (drops and recreates the DB)
 python run_pipeline.py --reset --export
-
-# 3. Outputs:
-#    indus_weave.db              ← SQLite database with all 4 schemas
-#    analytics/results/q01.csv … q10.csv
-#    logs/pipeline.log
 ```
 
-To switch to PostgreSQL:
+### 2. Standard One-Command Run
+Runs all pipeline stages sequentially:
 ```bash
-export DATABASE_URL="postgresql+psycopg2://user:pass@localhost/indus_weave"
+python run_pipeline.py
+```
+
+### 3. Run Specific Stage Only
+| Stage | Command | Description |
+|---|---|---|
+| **Stage 1** | `python run_pipeline.py --stage 1` | Ingest raw CSV & JSON files into `raw__*` tables |
+| **Stage 2** | `python run_pipeline.py --stage 2` | Clean data, SCD2 history, and dedup into `staging__*` |
+| **Stage 3** | `python run_pipeline.py --stage 3` | Build 183-day daily attendance fact engine |
+| **Stage 4** | `python run_pipeline.py --stage 4` | Load Star Schema Warehouse (Dims & Facts) |
+| **Stage 6** | `python run_pipeline.py --stage 6` | Run 17 automated Data Quality verification checks |
+
+### 4. Switch to PostgreSQL (Optional)
+```bash
+# Windows PowerShell:
+$env:DATABASE_URL="postgresql+psycopg2://user:pass@localhost:5432/indus_weave"
+python run_pipeline.py --reset --export
+
+# Linux / Mac Bash:
+export DATABASE_URL="postgresql+psycopg2://user:pass@localhost:5432/indus_weave"
 python run_pipeline.py --reset --export
 ```
 
