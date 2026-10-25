@@ -4,11 +4,10 @@
 
 ---
 
-## Author & Team
+## Author
 | Name | Role |
 |---|---|
 | **Hanzalah Asif** | Data Engineer & Analytics Lead |
-| **Qasim Hassan** | Pipeline Architect & SQL |
 
 ---
 
