@@ -1,190 +1,89 @@
 # Indus Weave HR Pipeline
-**Developed & Engineered by Hanzalah Asif**  
-*PeopleOps Data Hackathon — Oct 23–24, 2026*
 
----
+Python, pandas, and SQL Server pipeline for HR CSV/JSON data.
 
-## Author
-| Name | Role |
-|---|---|
-| **Hanzalah Asif** | Data Engineer & Analytics Lead |
+## What you need
 
----
-
-## Prerequisites
 - Python 3.11+
-- SQLite 3 (bundled with Python) **or** PostgreSQL 16+
+- SQL Server Express at `DESKTOP-LNP0AFF\SQLEXPRESS`
+- Microsoft ODBC Driver 18 for SQL Server
+- Windows Authentication
 
-```bash
-pip install -r requirements.txt
-```
+The project uses pandas to read the files, `pyodbc` to connect to SQL Server, and SQLAlchemy to send SQL and load tables. No database password is stored in the project.
 
----
+## First-time setup
 
-## 🚀 How to Run the Pipeline (Commands Cheatsheet)
+1. In SSMS, connect to `DESKTOP-LNP0AFF\SQLEXPRESS` using Windows Authentication.
+2. Open `setup_sql_server.sql` in SSMS and execute it. This creates the `indus_weave` database if it does not exist.
+3. Open PowerShell in the project folder and run:
 
-### 1. Complete Rebuild & Export (Recommended)
-Drops old DB, runs all stages from scratch, and exports Q01–Q10 CSVs:
-```bash
+```powershell
+python -m pip install -r requirements.txt
 python run_pipeline.py --reset --export
 ```
 
-### 2. Standard One-Command Run
-Runs all pipeline stages sequentially:
-```bash
-python run_pipeline.py
+Stage 1 reads all CSV and JSON files from `data/raw/` and loads them into SQL Server. You do not need to use the SSMS Import Wizard. The remaining stages clean and transform the data, build the warehouse, run quality checks, and export Q01–Q10 results as CSVs under `analytics/results/`.
+
+The server, database, and ODBC driver defaults are in `config.py`. Override them with `SQL_SERVER`, `SQL_DATABASE`, and `ODBC_DRIVER` environment variables if they change. Connection and SQL errors are shown by the pipeline.
+
+To confirm the data is in SQL Server, run this query in SSMS:
+
+```sql
+USE indus_weave;
+SELECT TOP (10) * FROM dbo.raw__employees;
 ```
 
-### 3. Run Specific Stage Only
-| Stage | Command | Description |
-|---|---|---|
-| **Stage 1** | `python run_pipeline.py --stage 1` | Ingest raw CSV & JSON files into `raw__*` tables |
-| **Stage 2** | `python run_pipeline.py --stage 2` | Clean data, SCD2 history, and dedup into `staging__*` |
-| **Stage 3** | `python run_pipeline.py --stage 3` | Build 183-day daily attendance fact engine |
-| **Stage 4** | `python run_pipeline.py --stage 4` | Load Star Schema Warehouse (Dims & Facts) |
-| **Stage 6** | `python run_pipeline.py --stage 6` | Run 17 automated Data Quality verification checks |
+## Run commands
 
-### 4. Switch to PostgreSQL (Optional)
-```bash
-# Windows PowerShell:
-$env:DATABASE_URL="postgresql+psycopg2://user:pass@localhost:5432/indus_weave"
-python run_pipeline.py --reset --export
-
-# Linux / Mac Bash:
-export DATABASE_URL="postgresql+psycopg2://user:pass@localhost:5432/indus_weave"
-python run_pipeline.py --reset --export
+```powershell
+python run_pipeline.py                 # run all stages
+python run_pipeline.py --reset --export # drop pipeline tables, rebuild, export results
+python run_pipeline.py --stage 1        # reload raw CSV/JSON tables only
+python run_pipeline.py --stage 2        # clean and stage data
+python run_pipeline.py --stage 3        # build daily attendance
+python run_pipeline.py --stage 4        # build warehouse
+python run_pipeline.py --stage 6        # run data-quality checks
 ```
 
----
+`--reset` drops only this pipeline's tables, not the SQL Server database itself.
 
-## Data files expected in `data/raw/`
+## Source files
 
-| File | Rows | Format |
-|---|---|---|
-| employees.csv | ~1,316 | CSV |
-| employment_history.csv | ~3,686 | CSV |
-| departments.csv | ~25 | CSV |
-| shifts.json | 4 | JSON |
-| shift_roster.csv | ~36,402 | CSV |
-| device_mapping.csv | ~1,260 | CSV |
-| biometric_punches.csv | ~345,280 | CSV |
-| holidays.csv | ~12 | CSV |
-| leave_requests.json | ~5,372 | JSON |
-| overtime_requests.csv | ~22,098 | CSV |
-| payroll_lines.csv | ~53,617 | CSV |
-| applications.csv | ~3,835 | CSV |
+All source data belongs in `data/raw/`.
 
----
+| File | Format |
+|---|---|
+| employees.csv | CSV |
+| employment_history.csv | CSV |
+| departments.csv | CSV |
+| shifts.json | JSON |
+| shift_roster.csv | CSV |
+| device_mapping.csv | CSV |
+| biometric_punches.csv | CSV |
+| holidays.csv | CSV |
+| leave_requests.json | JSON |
+| overtime_requests.csv | CSV |
+| payroll_lines.csv | CSV |
+| applications.csv | CSV |
 
 ## Pipeline stages
 
-```
-Stage 1  load_raw.py            → raw__* tables (text, idempotent via _row_hash)
-Stage 2a clean_employees.py     → staging__employees + employee_merge_log
-Stage 2b clean_history.py       → staging__employment_history (SCD2 dates rebuilt)
-Stage 2c clean_punches.py       → staging__punches_clean + rejected_punches
-Stage 2d flatten_leave.py       → staging__leave_requests + approval_steps + leave_days
-Stage 2e _clean_simple_tables() → remaining staging__ tables
-Stage 3  attendance_daily.sql   → staging__attendance_daily (one row/emp/day)
-Stage 4  01_dims + 02_facts     → warehouse__dim_* and warehouse__fact_*
-         03_load_warehouse.sql
-Stage 6  run_checks.py          → dq_results (17 automated checks)
-```
+1. `ingestion/load_raw.py` loads source files into `dbo.raw__*`.
+2. `transform/` cleans employee, employment-history, punch, leave, and other data into `dbo.staging__*`.
+3. `transform/build_attendance.py` creates daily attendance.
+4. `warehouse/ddl/` creates and loads warehouse dimensions and facts.
+5. `quality/run_checks.py` writes data-quality results to `dbo.dq_results`.
+6. Queries in `analytics/` export results to CSV.
 
----
+Raw tables are replaced from source files on each ingestion run, so rerunning does not append duplicate imports.
 
-## Run a single stage
+## Business rules
 
-```bash
-python run_pipeline.py --stage 1   # ingest only
-python run_pipeline.py --stage 6   # re-run DQ checks only
-```
+- Employee duplicates keep the latest `updated_at` record.
+- Employment-history `valid_to` is derived from the next `effective_from`; the last row is `9999-12-31`.
+- Duplicate biometric punches within two minutes are rejected.
+- Night-shift punches are assigned to the shift-start date.
+- Overtime is rounded down to 30-minute blocks.
 
----
-
-## Design decisions
-
-### 1. Employee deduplication
-`ROW_NUMBER() OVER (PARTITION BY emp_id ORDER BY updated_at DESC)` keeps the latest record. Every dropped row is logged to `staging__employee_merge_log` with reason `"Duplicate emp_id — kept latest updated_at"`.
-
-### 2. SCD Type 2 dates
-`effective_to` from the source is ignored (business rule: unreliable). Instead:
-```sql
-valid_to = LEAD(effective_from) - 1 day   -- per employee, ordered by effective_from
--- Last record per employee:
-valid_to = '9999-12-31'
-```
-Facts join via `work_date BETWEEN valid_from AND valid_to`.
-
-### 3. Faulty device detection
-For each `device_id`, the average check-in hour is computed. Any device whose average deviates from the median by **more than 45 minutes** is flagged as faulty. Its punches are corrected by adding/subtracting the rounded hour offset. Evidence is logged to `pipeline.log` with the device ID, direction, and magnitude.
-
-### 4. Night shift date assignment
-Punches with hour < 06:00 are shifted back 6 hours before taking their date. This assigns them to the shift-start date, not the calendar date of the punch.
-
-### 5. Attendance status priority
-```sql
-CASE
-  WHEN is_holiday = 1  THEN 'Holiday'
-  WHEN is_sunday  = 1  THEN 'Weekly Off'
-  WHEN is_on_leave= 1  THEN 'On Leave'
-  WHEN first_in IS NOT NULL AND last_out IS NOT NULL THEN 'Present'
-  WHEN first_in IS NOT NULL OR  last_out IS NOT NULL THEN 'Missing Punch'
-  ELSE                                                    'Absent'
-END
-```
-
-### 6. Overtime calculation
-```
-ot_minutes = FLOOR(minutes_after_shift_end / 30) * 30
-ot_hours   = ot_minutes / 60
-```
-Sunday / holiday: all worked time is overtime.
-
-### 7. Idempotent raw load
-Every raw row gets an MD5 `_row_hash` of all values. The raw table has `UNIQUE(_row_hash)`. Inserts use `INSERT OR IGNORE` (SQLite) / `ON CONFLICT DO NOTHING` (PostgreSQL).
-
----
-
-## Key findings for CFO
-See [`presentation/cfo_findings.md`](presentation/cfo_findings.md).
-
-1. **OT overpayment**: Approved OT exceeds biometric OT by 34% on average. Fix: block OT approvals where last-out ≤ 10 min past shift end.
-2. **Zombie payroll**: 11 employees paid after separation date (~PKR 1.2M). Fix: automate payroll block on `date_of_separation`.
-3. **Masked absenteeism at Plant 3**: 18% real absence vs 4% reported; retroactive leave cancellations hide it. Fix: monthly leave-audit report by manager.
-
----
-
-## Folder structure
-
-```
-indus-weave-hr-pipeline/
-├── README.md
-├── requirements.txt
-├── config.py
-├── run_pipeline.py           # one-command rebuild
-├── ingestion/
-│   └── load_raw.py           # Stage 1
-├── transform/
-│   ├── clean_employees.py    # Stage 2a
-│   ├── clean_history.py      # Stage 2b
-│   ├── clean_punches.py      # Stage 2c
-│   ├── flatten_leave.py      # Stage 2d
-│   └── sql/
-│       └── attendance_daily.sql  # Stage 3
-├── warehouse/
-│   ├── ddl/
-│   │   ├── 01_dims.sql
-│   │   ├── 02_facts.sql
-│   │   └── 03_load_warehouse.sql
-│   └── erd.png               # ER diagram
-├── analytics/
-│   ├── q01_headcount.sql … q10_leave_overuse.sql
-│   └── results/              # auto-generated CSVs
-├── quality/
-│   └── run_checks.py         # Stage 6 (17 DQ checks)
-├── presentation/
-│   └── cfo_findings.md
-└── logs/
-    └── pipeline.log
-```
+For a beginner-friendly explanation of the folders, files, dependencies, and
+the end-to-end data flow, see [PROJECT_GUIDE.md](PROJECT_GUIDE.md).

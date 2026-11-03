@@ -5,34 +5,19 @@ Cleans employment_history and rebuilds valid_from / valid_to:
   • valid_to = next record's effective_from − 1 day, per employee
   • Last record per employee gets valid_to = '9999-12-31'
 """
-import logging
-import sys
-from pathlib import Path
-
 import pandas as pd
-from sqlalchemy import create_engine, text
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from config import DATABASE_URL, LOG_FILE
+from config import create_db_engine
 from transform.clean_employees import parse_date, _write_staging
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.FileHandler(LOG_FILE), logging.StreamHandler(sys.stdout)],
-)
-log = logging.getLogger(__name__)
-
 
 def run(engine=None):
     if engine is None:
-        engine = create_engine(DATABASE_URL)
+        engine = create_db_engine()
 
-    is_sqlite = engine.dialect.name == "sqlite"
-    src_tbl = '"raw__employment_history"' if is_sqlite else "raw.employment_history"
+    src_tbl = "raw__employment_history"
 
     df = pd.read_sql(f"SELECT * FROM {src_tbl}", engine)
-    log.info(f"Employment history raw rows: {len(df):,}")
+    print(f"Employment history raw rows: {len(df):,}")
 
     # ── Clean text + dates ────────────────────────────────────────────────────
     for col in df.columns:
@@ -64,10 +49,10 @@ def run(engine=None):
     )
 
     df.drop(columns=["effective_to", "effective_from_dt"], inplace=True)
-    log.info(f"  Rebuilt valid_from/valid_to for {df['emp_id'].nunique():,} employees")
+    print(f"  Rebuilt valid_from/valid_to for {df['emp_id'].nunique():,} employees")
 
-    _write_staging(engine, is_sqlite, "employment_history", df)
-    log.info("clean_history: done")
+    _write_staging(engine, "employment_history", df)
+    print("clean_history: done")
     return df
 
 

@@ -13,7 +13,8 @@ WITH annual_leave_used AS (
     JOIN warehouse__dim_employee de ON fld.emp_key = de.emp_key
     WHERE UPPER(fld.leave_type) IN ('ANNUAL', 'ANNUAL LEAVE', 'AL')
       AND fld.date_key BETWEEN '2026-04-01' AND '2026-09-30'
-    GROUP BY de.emp_id, de.full_name, department, de.plant, annual_entitlement
+    GROUP BY de.emp_id, de.full_name, COALESCE(de.dept_name, 'Unknown'), de.plant,
+             COALESCE(de.annual_leave_entitlement, 21)
 )
 SELECT
     emp_id,

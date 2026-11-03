@@ -4,23 +4,11 @@ Cleans and deduplicates the employees table:
   • Trims whitespace, fixes casing, normalises dates → ISO YYYY-MM-DD
   • Deduplication: keep latest updated_at per emp_id; log merged rows
 """
-import logging
-import sys
 from datetime import datetime, timezone
-from pathlib import Path
-
 import pandas as pd
-from sqlalchemy import create_engine, text
+from sqlalchemy.dialects.mssql import NVARCHAR
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from config import DATABASE_URL, LOG_FILE
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.FileHandler(LOG_FILE), logging.StreamHandler(sys.stdout)],
-)
-log = logging.getLogger(__name__)
+from config import create_db_engine
 
 # Possible date formats in the raw data
 DATE_FORMATS = ["%Y-%m-%d", "%d/%m/%Y", "%d-%b-%Y", "%m/%d/%Y"]
@@ -35,21 +23,20 @@ def parse_date(val: str) -> str | None:
             return datetime.strptime(val.strip(), fmt).strftime("%Y-%m-%d")
         except ValueError:
             continue
-    log.warning(f"  Cannot parse date: {val!r}")
+    print(f"Warning: cannot parse date {val!r}")
     return val.strip()
 
 
 def run(engine=None):
     if engine is None:
-        engine = create_engine(DATABASE_URL)
+        engine = create_db_engine()
 
-    is_sqlite = engine.dialect.name == "sqlite"
-    src_tbl = '"raw__employees"' if is_sqlite else "raw.employees"
+    src_tbl = "raw__employees"
     run_at  = datetime.now(timezone.utc).isoformat()
 
     # ── Read raw ──────────────────────────────────────────────────────────────
     df = pd.read_sql(f"SELECT * FROM {src_tbl}", engine)
-    log.info(f"Employees raw rows: {len(df):,}")
+    print(f"Employees raw rows: {len(df):,}")
 
     # ── Basic cleaning ────────────────────────────────────────────────────────
     text_cols = [c for c in df.columns if not c.startswith("_")]
@@ -90,38 +77,36 @@ def run(engine=None):
             })
 
     df_clean = df[~is_dup].drop(columns=["_upd_sort"])
-    log.info(f"  After dedup: {len(df_clean):,} rows  (dropped {len(dupes):,} dupes)")
+    print(f"  After dedup: {len(df_clean):,} rows (dropped {len(dupes):,} duplicates)")
 
     # ── Write staging.employees ───────────────────────────────────────────────
-    _write_staging(engine, is_sqlite, "employees", df_clean)
+    _write_staging(engine, "employees", df_clean)
 
     # ── Write staging.employee_merge_log ─────────────────────────────────────
-    if merge_log:
-        df_log = pd.DataFrame(merge_log)
-        _write_staging(engine, is_sqlite, "employee_merge_log", df_log)
-        log.info(f"  Merge-log entries written: {len(df_log):,}")
+    df_log = pd.DataFrame(merge_log, columns=[
+        "emp_id", "kept_updated_at", "dropped_updated_at", "reason", "logged_at"
+    ])
+    _write_staging(engine, "employee_merge_log", df_log)
+    print(f"  Merge-log entries written: {len(df_log):,}")
 
-    log.info("clean_employees: done")
+    print("clean_employees: done")
     return df_clean
 
 
-def _write_staging(engine, is_sqlite, table, df):
-    schema_prefix = "" if is_sqlite else "staging."
-    tbl = f'"staging__{table}"' if is_sqlite else f"staging.{table}"
-
-    with engine.begin() as conn:
-        if not is_sqlite:
-            conn.execute(text("CREATE SCHEMA IF NOT EXISTS staging"))
-        conn.execute(text(f"DROP TABLE IF EXISTS {tbl}"))
-
+def _write_staging(engine, table, df):
+    tbl = f"staging__{table}"
     df.to_sql(
-        f"staging__{table}" if is_sqlite else table,
+        tbl,
         engine,
-        schema=None if is_sqlite else "staging",
         if_exists="replace",
         index=False,
+        chunksize=500,
+        dtype={
+            column: NVARCHAR(None)
+            for column in df.select_dtypes(include=["object"]).columns
+        },
     )
-    log.info(f"  Written {len(df):,} rows -> {tbl}")
+    print(f"  Written {len(df):,} rows -> dbo.{tbl}")
 
 
 if __name__ == "__main__":

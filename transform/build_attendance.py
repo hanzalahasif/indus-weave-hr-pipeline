@@ -12,26 +12,20 @@ Builds staging.attendance_daily according to the official hackathon data diction
   • Overtime on Sunday / Holiday = all worked time, rounded down to 30 min (Rule 15)
   • Attendance status priority: Sunday (Weekly Off) -> Holiday -> On Leave -> Present -> Missing Punch -> Absent (Rule 12)
 """
-import json
-import logging
-import sys
 from datetime import datetime, time, timedelta
-from pathlib import Path
-
+from bisect import bisect_right
 import numpy as np
 import pandas as pd
-from sqlalchemy import create_engine
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from config import DATABASE_URL, RAW_FILES, LOG_FILE
-from transform.clean_employees import _write_staging
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.FileHandler(LOG_FILE), logging.StreamHandler(sys.stdout)],
+from config import (
+    EARLY_DEPARTURE_MIN,
+    LATE_THRESHOLD_MIN,
+    OT_HALF_HOUR_BLOCK,
+    PERIOD_END,
+    PERIOD_START,
+    create_db_engine,
 )
-log = logging.getLogger(__name__)
+from transform.clean_employees import _write_staging
 
 PLANT_TO_SCOPE = {
     "Head Office": "HO",
@@ -50,13 +44,12 @@ SHIFT_TIMES = {
 
 def run(engine=None):
     if engine is None:
-        engine = create_engine(DATABASE_URL)
+        engine = create_db_engine()
 
-    is_sqlite = engine.dialect.name == "sqlite"
-    def raw(t): return f'"raw__{t}"' if is_sqlite else f"raw.{t}"
-    def stg(t): return f'"staging__{t}"' if is_sqlite else f"staging.{t}"
+    def raw(t): return f"raw__{t}"
+    def stg(t): return f"staging__{t}"
 
-    log.info("Building attendance_daily...")
+    print("Building attendance_daily...")
 
     # ── 1. Employees & Employment Spans ───────────────────────────────────────
     emp_df = pd.read_sql(f"SELECT * FROM {stg('employees')}", engine)
@@ -64,7 +57,7 @@ def run(engine=None):
     emp_df["separation_date"] = pd.to_datetime(emp_df["separation_date"], errors="coerce")
 
     # ── 2. Build Date Spine for Apr 1 – Sep 30, 2026 ──────────────────────────
-    dates = pd.date_range("2026-04-01", "2026-09-30", freq="D")
+    dates = pd.date_range(PERIOD_START, PERIOD_END, freq="D")
     spine = pd.MultiIndex.from_product(
         [emp_df["emp_id"], dates], names=["emp_id", "date"]
     ).to_frame().reset_index(drop=True)
@@ -80,17 +73,30 @@ def run(engine=None):
     )
     spine = spine[is_active].copy()
     spine["work_date"] = spine["date"].dt.strftime("%Y-%m-%d")
-    log.info(f"  Active employment employee-days: {len(spine):,}")
+    print(f"  Active employment employee-days: {len(spine):,}")
 
     # ── 3. Roster Mapping (Rule 5, Rule 6) ────────────────────────────────────
     roster_df = pd.read_sql(f"SELECT * FROM {stg('shift_roster')}", engine)
     roster_df["week_start"] = pd.to_datetime(roster_df["week_start"], errors="coerce")
-    roster_lookup = roster_df.set_index(["emp_id", "week_start"])["shift_code"].to_dict()
+    roster_df = roster_df.dropna(subset=["week_start"])
+    roster_by_emp = {}
+    for emp_id, group in roster_df.groupby("emp_id"):
+        ordered = group.sort_values("week_start")
+        roster_by_emp[emp_id] = (
+            ordered["week_start"].tolist(),
+            ordered["shift_code"].tolist(),
+        )
+
+    def roster_shift(emp_id, week_start):
+        weeks, shifts = roster_by_emp.get(emp_id, ([], []))
+        index = bisect_right(weeks, week_start) - 1
+        # Carry the latest known weekly shift forward; use GEN only before any roster entry.
+        return shifts[index] if index >= 0 else "GEN"
 
     # Roster week starts Monday
     mon_this = spine["date"] - pd.to_timedelta(spine["date"].dt.dayofweek, unit="D")
     spine["shift_code"] = [
-        roster_lookup.get((e, m), "GEN") for e, m in zip(spine["emp_id"], mon_this)
+        roster_shift(e, m) for e, m in zip(spine["emp_id"], mon_this)
     ]
 
     # ── 4. Clean Punches & Shift Date Association (Rule 7, 8, 9, 11) ──────────
@@ -103,7 +109,7 @@ def run(engine=None):
     p_mon_prev = p_prev - pd.to_timedelta(p_prev.dt.dayofweek, unit="D")
 
     y_shifts = [
-        roster_lookup.get((e, m), "GEN")
+        roster_shift(e, m)
         for e, m in zip(punches_clean["emp_id"], p_mon_prev)
     ]
     is_night_checkout = (np.array(y_shifts) == "NIGHT") & (
@@ -223,7 +229,7 @@ def run(engine=None):
         # Rule 15: Sunday or Holiday work -> ALL overtime rounded down to 30 min
         if is_sun_or_hol[i]:
             ot_mins = dur_secs / 60.0
-            ot_hours[i] = (ot_mins // 30) * 0.5
+            ot_hours[i] = (ot_mins // OT_HALF_HOUR_BLOCK) * (OT_HALF_HOUR_BLOCK / 60)
         else:
             # Regular working day
             if is_present[i]:
@@ -231,18 +237,20 @@ def run(engine=None):
                 s_st = shift_starts[i]
                 s_en = shift_ends[i]
                 late_diff = (fin - s_st) / np.timedelta64(1, "m")
-                if late_diff > 10.0:
+                if late_diff > LATE_THRESHOLD_MIN:
                     late_minutes[i] = round(late_diff, 1)
 
                 early_diff = (s_en - lout) / np.timedelta64(1, "m")
-                if early_diff > 10.0:
+                if early_diff > EARLY_DEPARTURE_MIN:
                     early_dep_minutes[i] = round(early_diff, 1)
 
                 # Rule 14: Overtime on working day = minutes worked after shift end
                 # rounded down to whole half-hours (29m=0, 45m=0.5h, 75m=1.0h)
                 after_shift = (lout - s_en) / np.timedelta64(1, "m")
-                if after_shift >= 30.0:
-                    ot_hours[i] = (after_shift // 30) * 0.5
+                if after_shift >= OT_HALF_HOUR_BLOCK:
+                    ot_hours[i] = (
+                        after_shift // OT_HALF_HOUR_BLOCK
+                    ) * (OT_HALF_HOUR_BLOCK / 60)
 
     spine["worked_hours"] = worked_hours
     spine["late_minutes"] = late_minutes
@@ -260,14 +268,14 @@ def run(engine=None):
     ]
     result_df = spine[out_cols].copy()
 
-    log.info(f"  Final attendance_daily rows: {len(result_df):,}")
-    log.info(f"  Status counts:\n{result_df['attendance_status'].value_counts().to_string()}")
-    log.info(f"  Total overtime hours from punches: {result_df['ot_hours_from_punches'].sum():,.1f} h")
-    log.info(f"  Late arrival count: {(result_df['late_minutes'] > 0).sum():,}")
-    log.info(f"  Early departure count: {(result_df['early_departure_minutes'] > 0).sum():,}")
+    print(f"  Final attendance_daily rows: {len(result_df):,}")
+    print(f"  Status counts:\n{result_df['attendance_status'].value_counts().to_string()}")
+    print(f"  Total overtime hours from punches: {result_df['ot_hours_from_punches'].sum():,.1f} h")
+    print(f"  Late arrival count: {(result_df['late_minutes'] > 0).sum():,}")
+    print(f"  Early departure count: {(result_df['early_departure_minutes'] > 0).sum():,}")
 
-    _write_staging(engine, is_sqlite, "attendance_daily", result_df)
-    log.info("build_attendance: done")
+    _write_staging(engine, "attendance_daily", result_df)
+    print("build_attendance: done")
     return result_df
 
 

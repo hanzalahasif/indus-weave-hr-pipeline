@@ -11,15 +11,6 @@ env/
 venv/
 ENV/
 
-# Large Database files (re-generated via python run_pipeline.py)
-*.db
-*.sqlite
-*.sqlite3
-
-# Logs
-logs/
-*.log
-
 # Jupyter Notebooks & checkpoints
 notebooks/
 *.ipynb

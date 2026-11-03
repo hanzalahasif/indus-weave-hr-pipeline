@@ -13,7 +13,7 @@ WITH monthly_cost AS (
     FROM warehouse__fact_payroll_line fpl
     JOIN warehouse__dim_employee de ON fpl.emp_key = de.emp_key
     WHERE fpl.component_type = 'EARNING'
-    GROUP BY fpl.pay_month, de.emp_id, de.full_name, dept_name, de.plant
+    GROUP BY fpl.pay_month, de.emp_id, de.full_name, COALESCE(de.dept_name, 'Unknown'), de.plant
 ),
 with_lag AS (
     SELECT

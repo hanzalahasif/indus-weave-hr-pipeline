@@ -1,75 +1,66 @@
--- ============================================================
--- Stage 4: 02_facts.sql
--- Star schema fact tables
--- ============================================================
-
--- ── fact_attendance_daily ─────────────────────────────────────────────────────
+-- SQL Server star-schema facts.
 DROP TABLE IF EXISTS warehouse__fact_attendance_daily;
-CREATE TABLE warehouse__fact_attendance_daily (
-    attendance_key      INTEGER PRIMARY KEY AUTOINCREMENT,
-    date_key            TEXT    NOT NULL REFERENCES warehouse__dim_date(date_key),
-    emp_key             INTEGER NOT NULL REFERENCES warehouse__dim_employee(emp_key),
-    shift_key           INTEGER REFERENCES warehouse__dim_shift(shift_key),
-    dept_key            INTEGER REFERENCES warehouse__dim_department(dept_key),
+DROP TABLE IF EXISTS warehouse__fact_leave_day;
+DROP TABLE IF EXISTS warehouse__fact_overtime_approved;
+DROP TABLE IF EXISTS warehouse__fact_payroll_line;
 
-    -- Measures
-    attendance_status   TEXT    NOT NULL
+CREATE TABLE warehouse__fact_attendance_daily (
+    attendance_key      INT IDENTITY(1,1) PRIMARY KEY,
+    date_key            VARCHAR(10) NOT NULL REFERENCES warehouse__dim_date(date_key),
+    emp_key             INT NOT NULL REFERENCES warehouse__dim_employee(emp_key),
+    shift_key           INT REFERENCES warehouse__dim_shift(shift_key),
+    dept_key            INT REFERENCES warehouse__dim_department(dept_key),
+    attendance_status   NVARCHAR(30) NOT NULL
                         CHECK (attendance_status IN
                                ('Present','Absent','On Leave','Holiday','Weekly Off','Missing Punch')),
-    punch_count         INTEGER DEFAULT 0,
-    first_in_ts         TEXT,
-    last_out_ts         TEXT,
-    worked_hours        REAL    DEFAULT 0,
-    late_minutes        REAL    DEFAULT 0,
-    early_departure_min REAL    DEFAULT 0,
-    ot_hours_from_punches REAL  DEFAULT 0
+    punch_count         INT DEFAULT 0,
+    first_in_ts         VARCHAR(30),
+    last_out_ts         VARCHAR(30),
+    worked_hours        FLOAT DEFAULT 0,
+    late_minutes        FLOAT DEFAULT 0,
+    early_departure_min FLOAT DEFAULT 0,
+    ot_hours_from_punches FLOAT DEFAULT 0
 );
-CREATE INDEX IF NOT EXISTS idx_fad_date    ON warehouse__fact_attendance_daily(date_key);
-CREATE INDEX IF NOT EXISTS idx_fad_emp     ON warehouse__fact_attendance_daily(emp_key);
-CREATE INDEX IF NOT EXISTS idx_fad_dept    ON warehouse__fact_attendance_daily(dept_key);
+CREATE INDEX idx_fad_date ON warehouse__fact_attendance_daily(date_key);
+CREATE INDEX idx_fad_emp ON warehouse__fact_attendance_daily(emp_key);
+CREATE INDEX idx_fad_dept ON warehouse__fact_attendance_daily(dept_key);
 
--- ── fact_leave_day ────────────────────────────────────────────────────────────
-DROP TABLE IF EXISTS warehouse__fact_leave_day;
 CREATE TABLE warehouse__fact_leave_day (
-    leave_day_key   INTEGER PRIMARY KEY AUTOINCREMENT,
-    date_key        TEXT    NOT NULL REFERENCES warehouse__dim_date(date_key),
-    emp_key         INTEGER NOT NULL REFERENCES warehouse__dim_employee(emp_key),
-    dept_key        INTEGER REFERENCES warehouse__dim_department(dept_key),
-    request_id      TEXT    NOT NULL,
-    leave_type      TEXT    NOT NULL
+    leave_day_key   INT IDENTITY(1,1) PRIMARY KEY,
+    date_key        VARCHAR(10) NOT NULL REFERENCES warehouse__dim_date(date_key),
+    emp_key         INT NOT NULL REFERENCES warehouse__dim_employee(emp_key),
+    dept_key        INT REFERENCES warehouse__dim_department(dept_key),
+    request_id      NVARCHAR(100) NOT NULL,
+    leave_type      NVARCHAR(50) NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_fld_date    ON warehouse__fact_leave_day(date_key);
-CREATE INDEX IF NOT EXISTS idx_fld_emp     ON warehouse__fact_leave_day(emp_key);
+CREATE INDEX idx_fld_date ON warehouse__fact_leave_day(date_key);
+CREATE INDEX idx_fld_emp ON warehouse__fact_leave_day(emp_key);
 
--- ── fact_overtime_approved ────────────────────────────────────────────────────
-DROP TABLE IF EXISTS warehouse__fact_overtime_approved;
 CREATE TABLE warehouse__fact_overtime_approved (
-    ot_key          INTEGER PRIMARY KEY AUTOINCREMENT,
-    date_key        TEXT    NOT NULL REFERENCES warehouse__dim_date(date_key),
-    emp_key         INTEGER NOT NULL REFERENCES warehouse__dim_employee(emp_key),
-    dept_key        INTEGER REFERENCES warehouse__dim_department(dept_key),
-    request_id      TEXT    NOT NULL,
-    requested_hours REAL    DEFAULT 0,
-    approved_hours  REAL    DEFAULT 0,
-    ot_status       TEXT    NOT NULL,
-    approver_id     TEXT
+    ot_key          INT IDENTITY(1,1) PRIMARY KEY,
+    date_key        VARCHAR(10) NOT NULL REFERENCES warehouse__dim_date(date_key),
+    emp_key         INT NOT NULL REFERENCES warehouse__dim_employee(emp_key),
+    dept_key        INT REFERENCES warehouse__dim_department(dept_key),
+    request_id      NVARCHAR(100) NOT NULL,
+    requested_hours FLOAT DEFAULT 0,
+    approved_hours  FLOAT DEFAULT 0,
+    ot_status       NVARCHAR(50) NOT NULL,
+    approver_id     NVARCHAR(100)
 );
-CREATE INDEX IF NOT EXISTS idx_foa_date    ON warehouse__fact_overtime_approved(date_key);
-CREATE INDEX IF NOT EXISTS idx_foa_emp     ON warehouse__fact_overtime_approved(emp_key);
+CREATE INDEX idx_foa_date ON warehouse__fact_overtime_approved(date_key);
+CREATE INDEX idx_foa_emp ON warehouse__fact_overtime_approved(emp_key);
 
--- ── fact_payroll_line ─────────────────────────────────────────────────────────
-DROP TABLE IF EXISTS warehouse__fact_payroll_line;
 CREATE TABLE warehouse__fact_payroll_line (
-    payroll_key     INTEGER PRIMARY KEY AUTOINCREMENT,
-    date_key        TEXT    NOT NULL REFERENCES warehouse__dim_date(date_key),  -- month-end date
-    emp_key         INTEGER NOT NULL REFERENCES warehouse__dim_employee(emp_key),
-    dept_key        INTEGER REFERENCES warehouse__dim_department(dept_key),
-    line_id         TEXT    NOT NULL,
-    pay_month       TEXT    NOT NULL,  -- YYYY-MM
-    component       TEXT    NOT NULL,
-    component_type  TEXT    NOT NULL,
-    units           REAL,
-    amount          REAL    NOT NULL
+    payroll_key     INT IDENTITY(1,1) PRIMARY KEY,
+    date_key        VARCHAR(10) NOT NULL REFERENCES warehouse__dim_date(date_key),
+    emp_key         INT NOT NULL REFERENCES warehouse__dim_employee(emp_key),
+    dept_key        INT REFERENCES warehouse__dim_department(dept_key),
+    line_id         NVARCHAR(100) NOT NULL,
+    pay_month       VARCHAR(7) NOT NULL,
+    component       NVARCHAR(100) NOT NULL,
+    component_type  NVARCHAR(50) NOT NULL,
+    units           FLOAT,
+    amount          FLOAT NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_fpl_emp_month ON warehouse__fact_payroll_line(emp_key, pay_month);
-CREATE INDEX IF NOT EXISTS idx_fpl_component ON warehouse__fact_payroll_line(component);
+CREATE INDEX idx_fpl_emp_month ON warehouse__fact_payroll_line(emp_key, pay_month);
+CREATE INDEX idx_fpl_component ON warehouse__fact_payroll_line(component);

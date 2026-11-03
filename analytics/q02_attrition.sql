@@ -19,7 +19,7 @@ separations AS (
     JOIN warehouse__dim_employee de
          ON de.separation_date BETWEEN ml.m_start AND ml.m_end
          AND de.separation_date BETWEEN de.valid_from AND de.valid_to
-    GROUP BY ml.m, department
+    GROUP BY ml.m, COALESCE(de.dept_name, 'Unknown')
 ),
 avg_headcount AS (
     SELECT
@@ -41,7 +41,7 @@ avg_headcount AS (
     FROM month_list ml
     JOIN warehouse__dim_employee de
          ON (ml.m_start BETWEEN de.valid_from AND de.valid_to OR ml.m_end BETWEEN de.valid_from AND de.valid_to)
-    GROUP BY ml.m, department
+    GROUP BY ml.m, COALESCE(de.dept_name, 'Unknown')
 )
 SELECT
     ah.pay_month,

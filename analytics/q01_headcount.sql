@@ -21,7 +21,7 @@ active_on_month_end AS (
          ON me.month_end BETWEEN de.valid_from AND de.valid_to
     WHERE de.hire_date <= me.month_end
       AND (de.separation_date IS NULL OR de.separation_date = '' OR de.separation_date > me.month_end)
-    GROUP BY me.month_end, de.plant, department
+    GROUP BY me.month_end, de.plant, COALESCE(de.dept_name, 'Unknown')
 )
 SELECT
     month_end,

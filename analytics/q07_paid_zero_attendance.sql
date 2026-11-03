@@ -11,10 +11,10 @@ WITH paid_months AS (
 attendance_months AS (
     SELECT
         fad.emp_key,
-        STRFTIME('%Y-%m', fad.date_key) AS pay_month,
+        CONVERT(CHAR(7), fad.date_key, 120) AS pay_month,
         SUM(CASE WHEN fad.attendance_status = 'Present' THEN 1 ELSE 0 END) AS present_days
     FROM warehouse__fact_attendance_daily fad
-    GROUP BY fad.emp_key, pay_month
+    GROUP BY fad.emp_key, CONVERT(CHAR(7), fad.date_key, 120)
 )
 SELECT
     pm.pay_month,

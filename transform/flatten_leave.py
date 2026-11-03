@@ -9,24 +9,10 @@ Transforms nested leave_requests.json according to business rules:
      - staging.leave_days
 """
 import json
-import logging
-import sys
-from datetime import datetime
-from pathlib import Path
-
 import pandas as pd
-from sqlalchemy import create_engine
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from config import DATABASE_URL, RAW_FILES, LOG_FILE
+from config import RAW_FILES, create_db_engine
 from transform.clean_employees import _write_staging
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.FileHandler(LOG_FILE), logging.StreamHandler(sys.stdout)],
-)
-log = logging.getLogger(__name__)
 
 PLANT_TO_SCOPE = {
     "Head Office": "HO",
@@ -38,9 +24,7 @@ PLANT_TO_SCOPE = {
 
 def run(engine=None):
     if engine is None:
-        engine = create_engine(DATABASE_URL)
-
-    is_sqlite = engine.dialect.name == "sqlite"
+        engine = create_db_engine()
 
     # ── Read holidays for plant filtering ─────────────────────────────────────
     holidays_path = RAW_FILES["holidays"]
@@ -65,7 +49,7 @@ def run(engine=None):
     with open(leave_file, encoding="utf-8") as f:
         data = json.load(f)
 
-    log.info(f"Loaded {len(data):,} raw leave requests from {leave_file.name}")
+    print(f"Loaded {len(data):,} leave requests from {leave_file.name}")
 
     requests_list = []
     approvals_list = []
@@ -147,21 +131,21 @@ def run(engine=None):
                         "leave_date": d_str,
                     })
             except Exception as e:
-                log.warning(f"Error parsing dates for request {req_id}: {e}")
+                print(f"Warning: invalid leave dates for request {req_id}: {e}")
 
     df_requests = pd.DataFrame(requests_list)
     df_approvals = pd.DataFrame(approvals_list)
     df_leave_days = pd.DataFrame(leave_days_list)
 
-    log.info(f"  Processed leave_requests: {len(df_requests):,} (Approved: {df_requests['is_approved'].sum():,})")
-    log.info(f"  Processed approval steps: {len(df_approvals):,}")
-    log.info(f"  Generated approved leave days: {len(df_leave_days):,}")
+    print(f"  Processed leave requests: {len(df_requests):,} (approved: {df_requests['is_approved'].sum():,})")
+    print(f"  Processed approval steps: {len(df_approvals):,}")
+    print(f"  Generated approved leave days: {len(df_leave_days):,}")
 
-    _write_staging(engine, is_sqlite, "leave_requests", df_requests)
-    _write_staging(engine, is_sqlite, "leave_approval_steps", df_approvals)
-    _write_staging(engine, is_sqlite, "leave_days", df_leave_days)
+    _write_staging(engine, "leave_requests", df_requests)
+    _write_staging(engine, "leave_approval_steps", df_approvals)
+    _write_staging(engine, "leave_days", df_leave_days)
 
-    log.info("flatten_leave: done")
+    print("flatten_leave: done")
     return df_requests, df_approvals, df_leave_days
 
 

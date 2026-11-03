@@ -1,45 +1,23 @@
 """
 Stage 6 — quality/run_checks.py
 Automated data quality checks. Writes results to dq_results table.
-Runs after every load stage.
+Runs at the end of the full pipeline (or when stage 6 is selected).
 
 Checks:
-  1. PK uniqueness + NOT NULL on every primary key
-  2. Referential integrity: every fact row has matching dim row
-  3. Reconciliation: raw rows = staging rows + rejected rows
-  4. Accepted values: attendance_status, leave_type, pay_component
-  5. Business sanity: no negative hours, no shifts > 16h, no SCD2 overlaps
+  1. Selected employee, attendance, and warehouse key uniqueness/null checks
+  2. Selected fact-to-dimension referential-integrity checks
+  3. Employee and punch row-count reconciliation
+  4. Attendance-status accepted values
+  5. Negative/overlong hours, SCD2 overlap, and overtime-date sanity checks
 """
-import sys
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
 import pandas as pd
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
+from sqlalchemy.dialects.mssql import NVARCHAR
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from config import DATABASE_URL, LOG_FILE, MAX_SHIFT_HOURS
-import logging
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.FileHandler(LOG_FILE), logging.StreamHandler(sys.stdout)],
-)
-log = logging.getLogger(__name__)
-
-VALID_ATTENDANCE_STATUS = frozenset(
-    ["Present", "Absent", "On Leave", "Holiday", "Weekly Off", "Missing Punch"]
-)
-VALID_LEAVE_TYPES = frozenset(
-    ["Annual", "Sick", "Casual", "Maternity", "Paternity", "Unpaid", "Bereavement"]
-)
-VALID_PAY_COMPONENTS = frozenset(
-    ["Basic", "HRA", "Conveyance", "OT", "Overtime", "Overtime Pay", "Bonus",
-     "Deduction", "Tax", "PF", "EOBI"]
-)
-
+from config import MAX_SHIFT_HOURS, create_db_engine
 
 # ─── Helper ───────────────────────────────────────────────────────────────────
 
@@ -61,28 +39,29 @@ def run_check(conn, check_name: str, layer: str, sql: str) -> dict[str, Any]:
     }
 
 
-def ensure_dq_table(engine, is_sqlite):
-    tbl = '"dq_results"' if is_sqlite else "dq_results"
+def ensure_dq_table(engine):
     with engine.begin() as conn:
         conn.execute(text(f"""
-            CREATE TABLE IF NOT EXISTS {tbl} (
-                id          INTEGER PRIMARY KEY {'AUTOINCREMENT' if is_sqlite else 'GENERATED ALWAYS AS IDENTITY'},
-                check_name  TEXT NOT NULL,
-                layer       TEXT NOT NULL,
-                status      TEXT NOT NULL,
-                failed_rows INTEGER,
-                run_at      TEXT NOT NULL
+            IF OBJECT_ID(N'dbo.dq_results', N'U') IS NULL
+            CREATE TABLE dbo.dq_results (
+                id          INT IDENTITY(1,1) PRIMARY KEY,
+                check_name  NVARCHAR(200) NOT NULL,
+                layer       NVARCHAR(50) NOT NULL,
+                status      NVARCHAR(500) NOT NULL,
+                failed_rows INT,
+                run_at      NVARCHAR(40) NOT NULL
             )
         """))
 
 
-def write_results(engine, is_sqlite, results: list[dict]):
-    tbl = '"dq_results"' if is_sqlite else "dq_results"
+def write_results(engine, results: list[dict]):
     rows = [{k: v for k, v in r.items()} for r in results]
     df = pd.DataFrame(rows)
     df.to_sql(
         "dq_results", engine,
         if_exists="append", index=False,
+        chunksize=500,
+        dtype={column: NVARCHAR(None) for column in df.select_dtypes(include=["object"]).columns},
     )
 
 
@@ -99,8 +78,8 @@ CHECKS = [
          SELECT emp_id, work_date, COUNT(*) AS c
          FROM staging__attendance_daily
          GROUP BY emp_id, work_date
-         HAVING c > 1
-     )"""),
+         HAVING COUNT(*) > 1
+     ) AS duplicate_rows"""),
     ("PK: dim_employee emp_key unique", "warehouse",
      "SELECT COUNT(*) - COUNT(DISTINCT emp_key) FROM warehouse__dim_employee"),
     ("PK: dim_date date_key unique", "warehouse",
@@ -168,10 +147,9 @@ CHECKS = [
 
 def run(engine=None):
     if engine is None:
-        engine = create_engine(DATABASE_URL)
+        engine = create_db_engine()
 
-    is_sqlite = engine.dialect.name == "sqlite"
-    ensure_dq_table(engine, is_sqlite)
+    ensure_dq_table(engine)
 
     results = []
     with engine.connect() as conn:
@@ -179,13 +157,13 @@ def run(engine=None):
             r = run_check(conn, check_name, layer, sql)
             results.append(r)
             icon = "[PASS]" if r["status"] == "PASS" else "[FAIL]"
-            log.info(f"  {icon} [{layer}] {check_name}: {r['status']} (failed={r['failed_rows']})")
+            print(f"  {icon} [{layer}] {check_name}: {r['status']} (failed={r['failed_rows']})")
 
-    write_results(engine, is_sqlite, results)
+    write_results(engine, results)
 
     pass_count = sum(1 for r in results if r["status"] == "PASS")
     fail_count = len(results) - pass_count
-    log.info(f"\nDQ Summary: {pass_count} PASS / {fail_count} FAIL out of {len(results)} checks")
+    print(f"\nDQ Summary: {pass_count} PASS / {fail_count} FAIL out of {len(results)} checks")
     return results
 
 
