@@ -1,108 +1,188 @@
-# Indus Weave HR Pipeline
+# Indus Weave – HR Data Engineering Pipeline
 
-Python, pandas, and SQL Server pipeline for HR CSV/JSON data.
+A Python-based HR Data Engineering project that processes raw HR data, performs data cleaning and transformation, and loads structured data into Microsoft SQL Server for analytics and reporting.
 
-## What you need
+The project demonstrates an end-to-end ETL workflow, with Apache Airflow and Docker included for workflow orchestration.
 
-- Python 3.11+
-- SQL Server Express at `DESKTOP-LNP0AFF\SQLEXPRESS`
-- Microsoft ODBC Driver 18 for SQL Server
-- Windows Authentication
+## Project Overview
 
-The project uses pandas to read the files, `pyodbc` to connect to SQL Server, and SQLAlchemy to send SQL and load tables. No database password is stored in the project.
+HR data is often stored across multiple CSV files and requires cleaning, standardization, validation, and integration before it can be used for reporting.
 
-## First-time setup
+This project builds an ETL pipeline to:
 
-1. In SSMS, connect to `DESKTOP-LNP0AFF\SQLEXPRESS` using Windows Authentication.
-2. Open `setup_sql_server.sql` in SSMS and execute it. This creates the `indus_weave` database if it does not exist.
-3. Open PowerShell in the project folder and run:
+- Ingest raw HR datasets from CSV files.
+- Clean and transform data using Python and Pandas.
+- Handle missing values, inconsistent records, and data quality issues.
+- Process HR-related information, including employee and attendance data.
+- Load structured data into Microsoft SQL Server.
+- Organize data for analytical queries and reporting.
+- Export processed data for further use.
 
-```powershell
-python -m pip install -r requirements.txt
-python run_pipeline.py --reset --export
-```
+## Technologies Used
 
-Stage 1 reads all CSV and JSON files from `data/raw/` and loads them into SQL Server. You do not need to use the SSMS Import Wizard. The remaining stages clean and transform the data, build the warehouse, run quality checks, and export Q01–Q10 results as CSVs under `analytics/results/`.
-
-The server, database, and ODBC driver defaults are in `config.py`. Override them with `SQL_SERVER`, `SQL_DATABASE`, and `ODBC_DRIVER` environment variables if they change. Connection and SQL errors are shown by the pipeline.
-
-To confirm the data is in SQL Server, run this query in SSMS:
-
-```sql
-USE indus_weave;
-SELECT TOP (10) * FROM dbo.raw__employees;
-```
-
-## Run commands
-
-```powershell
-python run_pipeline.py                 # run all stages
-python run_pipeline.py --reset --export # drop pipeline tables, rebuild, export results
-python run_pipeline.py --stage 1        # reload raw CSV/JSON tables only
-python run_pipeline.py --stage 2        # clean and stage data
-python run_pipeline.py --stage 3        # build daily attendance
-python run_pipeline.py --stage 4        # build warehouse
-python run_pipeline.py --stage 6        # run data-quality checks
-```
-
-`--reset` drops only this pipeline's tables, not the SQL Server database itself.
-
-## Source files
-
-All source data belongs in `data/raw/`.
-
-| File | Format |
+| Technology | Purpose |
 |---|---|
-| employees.csv | CSV |
-| employment_history.csv | CSV |
-| departments.csv | CSV |
-| shifts.json | JSON |
-| shift_roster.csv | CSV |
-| device_mapping.csv | CSV |
-| biometric_punches.csv | CSV |
-| holidays.csv | CSV |
-| leave_requests.json | JSON |
-| overtime_requests.csv | CSV |
-| payroll_lines.csv | CSV |
-| applications.csv | CSV |
+| Python | ETL development and pipeline logic |
+| Pandas | Data manipulation and transformation |
+| NumPy | Numerical operations |
+| SQL Server | Data storage and querying |
+| SQLAlchemy | Database connectivity |
+| PyODBC | SQL Server connectivity |
+| Apache Airflow | Workflow orchestration |
+| Docker | Containerized Airflow environment |
+| Git & GitHub | Version control |
 
-## Pipeline stages
+## ETL Workflow
 
-1. `ingestion/load_raw.py` loads source files into `dbo.raw__*`.
-2. `transform/` cleans employee, employment-history, punch, leave, and other data into `dbo.staging__*`.
-3. `transform/build_attendance.py` creates daily attendance.
-4. `warehouse/ddl/` creates and loads warehouse dimensions and facts.
-5. `quality/run_checks.py` writes data-quality results to `dbo.dq_results`.
-6. Queries in `analytics/` export results to CSV.
+```text
+Raw HR CSV Files
+       |
+       v
+Data Ingestion
+       |
+       v
+Data Cleaning
+       |
+       v
+Data Transformation
+       |
+       v
+Data Quality Checks
+       |
+       v
+SQL Server Database
+       |
+       v
+Analytics & Data Export
+```
 
-Raw tables are replaced from source files on each ingestion run, so rerunning does not append duplicate imports.
+## Project Structure
 
-## Business rules
+```text
+indus-weave-hr-pipeline/
+│
+├── data/
+│   └── raw/
+│
+├── sql/
+│
+├── airflow/
+│   ├── dags/
+│   ├── Dockerfile
+│   ├── docker-compose.yaml
+│   └── indus-requirements.txt
+│
+├── config.py
+├── run_pipeline.py
+├── requirements.txt
+├── Dockerfile
+├── .gitignore
+└── README.md
+```
 
-- Employee duplicates keep the latest `updated_at` record.
-- Employment-history `valid_to` is derived from the next `effective_from`; the last row is `9999-12-31`.
-- Duplicate biometric punches within two minutes are rejected.
-- Night-shift punches are assigned to the shift-start date.
-- Overtime is rounded down to 30-minute blocks.
+## Getting Started
 
-For a beginner-friendly explanation of the folders, files, dependencies, and
-the end-to-end data flow, see [PROJECT_GUIDE.md](PROJECT_GUIDE.md).
+### 1. Clone the Repository
 
-## Airflow orchestration (Docker)
+```bash
+git clone https://github.com/hanzalahasif/indus-weave-hr-pipeline.git
 
-The `airflow/` directory contains the local Apache Airflow 3.3.2 CeleryExecutor setup, its custom image, dependencies, and DAGs. The `indus_weave_hr_pipeline` DAG runs the HR pipeline from the repository mounted into the Airflow containers.
+cd indus-weave-hr-pipeline
+```
 
-### Start Airflow
+### 2. Create a Virtual Environment
 
-1. Install Docker Desktop with WSL 2 integration enabled.
-2. Copy `airflow/.env.example` to `airflow/.env` and set local secrets and connection values. Never commit `airflow/.env`.
-3. From the repository root, run:
+**Windows:**
 
-   ```bash
-   cd airflow
-   docker compose up -d --build
-   ```
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+```
 
-4. Open `http://localhost:8080`, enable `indus_weave_hr_pipeline`, and trigger it manually.
+**Linux:**
 
-This Compose configuration is intended for local development, not production. The SQL Server connection also requires SQL Server to accept connections from Docker and valid authentication/ODBC configuration. Windows Trusted Connection is not automatically available inside a Linux container.
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### 3. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Configure SQL Server
+
+Configure your SQL Server connection through the environment variables used by `config.py`.
+
+You will need:
+
+- SQL Server instance name
+- Database name
+- ODBC Driver 18 for SQL Server
+- Appropriate authentication credentials
+
+Do not commit your actual database passwords or credentials to GitHub.
+
+### 5. Run the Pipeline
+
+Run the complete pipeline:
+
+```bash
+python run_pipeline.py
+```
+
+Run a specific stage:
+
+```bash
+python run_pipeline.py --stage 1
+```
+
+Reset existing pipeline tables before execution:
+
+```bash
+python run_pipeline.py --reset
+```
+
+Run the pipeline and export processed data:
+
+```bash
+python run_pipeline.py --export
+```
+
+**Important:** The `--reset` option can drop existing pipeline tables. Use it carefully.
+
+## Apache Airflow Orchestration
+
+The repository also includes an Apache Airflow setup using Docker Compose.
+
+The Airflow DAG is designed to orchestrate the HR pipeline.
+
+Airflow-related files are available in:
+
+```text
+airflow/
+```
+
+The Airflow environment requires its own configuration, dependencies, database connectivity, and appropriate ODBC driver setup.
+
+## Key Learning Outcomes
+
+Through this project, I worked with:
+
+- Building ETL pipelines using Python.
+- Data cleaning and transformation with Pandas.
+- Connecting Python applications to SQL Server.
+- Structuring data for analytical workloads.
+- Handling database operations and pipeline execution.
+- Workflow orchestration using Apache Airflow.
+- Containerization concepts using Docker.
+- Version control and project management with Git and GitHub.
+## Author
+
+**Hanzalah Asif**
+
+GitHub: [@hanzalahasif](https://github.com/hanzalahasif)
+
+Project Repository: [Indus Weave HR Data Engineering Pipeline](https://github.com/hanzalahasif/indus-weave-hr-pipeline)
