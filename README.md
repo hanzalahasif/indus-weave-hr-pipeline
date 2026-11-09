@@ -87,3 +87,22 @@ Raw tables are replaced from source files on each ingestion run, so rerunning do
 
 For a beginner-friendly explanation of the folders, files, dependencies, and
 the end-to-end data flow, see [PROJECT_GUIDE.md](PROJECT_GUIDE.md).
+
+## Airflow orchestration (Docker)
+
+The `airflow/` directory contains the local Apache Airflow 3.3.2 CeleryExecutor setup, its custom image, dependencies, and DAGs. The `indus_weave_hr_pipeline` DAG runs the HR pipeline from the repository mounted into the Airflow containers.
+
+### Start Airflow
+
+1. Install Docker Desktop with WSL 2 integration enabled.
+2. Copy `airflow/.env.example` to `airflow/.env` and set local secrets and connection values. Never commit `airflow/.env`.
+3. From the repository root, run:
+
+   ```bash
+   cd airflow
+   docker compose up -d --build
+   ```
+
+4. Open `http://localhost:8080`, enable `indus_weave_hr_pipeline`, and trigger it manually.
+
+This Compose configuration is intended for local development, not production. The SQL Server connection also requires SQL Server to accept connections from Docker and valid authentication/ODBC configuration. Windows Trusted Connection is not automatically available inside a Linux container.

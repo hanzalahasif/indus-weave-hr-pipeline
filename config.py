@@ -11,13 +11,27 @@ DATA_DIR = BASE_DIR / "data" / "raw"
 SQL_SERVER = os.environ.get("SQL_SERVER", r"DESKTOP-LNP0AFF\SQLEXPRESS")
 SQL_DATABASE = os.environ.get("SQL_DATABASE", "indus_weave")
 ODBC_DRIVER = os.environ.get("ODBC_DRIVER", "ODBC Driver 18 for SQL Server")
-ODBC_CONNECTION = (
-    f"DRIVER={{{ODBC_DRIVER}}};"
-    f"SERVER={SQL_SERVER};"
-    f"DATABASE={SQL_DATABASE};"
-    "Trusted_Connection=yes;"
-    "TrustServerCertificate=yes;"
-)
+SQL_USER = os.environ.get("SQL_USER")
+SQL_PASSWORD = os.environ.get("SQL_PASSWORD")
+
+if SQL_USER and SQL_PASSWORD:
+    ODBC_CONNECTION = (
+        f"DRIVER={{{ODBC_DRIVER}}};"
+        f"SERVER={SQL_SERVER};"
+        f"DATABASE={SQL_DATABASE};"
+        f"UID={SQL_USER};"
+        f"PWD={SQL_PASSWORD};"
+        "Encrypt=yes;"
+        "TrustServerCertificate=yes;"
+    )
+else:
+    ODBC_CONNECTION = (
+        f"DRIVER={{{ODBC_DRIVER}}};"
+        f"SERVER={SQL_SERVER};"
+        f"DATABASE={SQL_DATABASE};"
+        "Trusted_Connection=yes;"
+        "TrustServerCertificate=yes;"
+    )
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
     f"mssql+pyodbc:///?odbc_connect={quote_plus(ODBC_CONNECTION)}",
