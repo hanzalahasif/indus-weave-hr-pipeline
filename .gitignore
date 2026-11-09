@@ -132,3 +132,19 @@ __pycache__/
 *.py[cod]
 
 # Local exports/results (review before publishing if intentionally versioned)
+
+# Local secrets and runtime output
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+**/logs/
+airflow/logs/
+analytics/results/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+
+# Local exports/results (review before publishing if intentionally versioned)
